@@ -92,6 +92,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set build output dir
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -100,12 +105,12 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
         run: |
-          ./Release/my_program
+          ${{ steps.strings.outputs.build-output-dir }}/my_program
 
   # Build job for Ubuntu with clang
   build-ubuntu-clang:
@@ -152,12 +157,12 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
         run: |
-          ./Release/my_program
+          ${{ steps.strings.outputs.build-output-dir }}/my_program
 
   # Build job for macOS
   build-macos:
@@ -204,9 +209,9 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
         run: |
-          ./Release/my_program
+          ${{ steps.strings.outputs.build-output-dir }}/my_program
