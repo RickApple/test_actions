@@ -3,7 +3,7 @@
 int main() {
     #if defined(_WIN32)
         printf("Hello, windows!\n");
-    #elif defined(APPLE)
+    #elif defined(__APPLE__)
         printf("Hello, apple!\n");
     #else
         printf("Linux\n");
