@@ -1,5 +1,3 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
 name: CMake on multiple platforms
 
 on:
@@ -9,32 +7,10 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }} - ${{ matrix.c_compiler }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            build_type: Release
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            build_type: Release
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            build_type: Release
-            c_compiler: clang
-            cpp_compiler: clang++
-          - os: macos-latest
-            build_type: Release
-            c_compiler: clang
-            cpp_compiler: clang++
-    outputs:
-      matrix: ${{ toJson(matrix) }}
-
+  # Build job for Windows
+  build-windows:
+    name: Build (Windows - cl)
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -46,41 +22,43 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_CXX_COMPILER=cl
+          -DCMAKE_C_COMPILER=cl
+          -DCMAKE_BUILD_TYPE=Release
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
+          name: build-windows-cl
           path: ${{ steps.strings.outputs.build-output-dir }}
 
-  test:
-    name: Test (${{ matrix.os }} - ${{ matrix.c_compiler }})
-    needs: build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            build_type: Release
-            c_compiler: cl
-          - os: ubuntu-latest
-            build_type: Release
-            c_compiler: gcc
-          - os: ubuntu-latest
-            build_type: Release
-            c_compiler: clang
-          - os: macos-latest
-            build_type: Release
-            c_compiler: clang
+  # Test job for Windows (depends on build-windows)
+  test-windows:
+    name: Test (Windows - cl)
+    needs: build-windows  # This makes the test job run only after the corresponding build job is finished
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-windows-cl
+          path: build
+
+      - name: Run Tests
+        working-directory: build
+        run: |
+          ./Release/my_program.exe
+
+  # Build job for Ubuntu with gcc
+  build-ubuntu-gcc:
+    name: Build (Ubuntu - gcc)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -89,17 +67,146 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
 
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=g++
+          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_BUILD_TYPE=Release
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-ubuntu-gcc
+          path: ${{ steps.strings.outputs.build-output-dir }}
+
+  # Test job for Ubuntu with gcc (depends on build-ubuntu-gcc)
+  test-ubuntu-gcc:
+    name: Test (Ubuntu - gcc)
+    needs: build-ubuntu-gcc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
+          name: build-ubuntu-gcc
           path: build
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
 
       - name: Run Tests
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        working-directory: build
         run: |
-          ${{ steps.strings.outputs.build-output-dir }}${{ matrix.os == 'windows-latest' && '/Release' || '' }}/my_program${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          ./Release/my_program
+
+  # Build job for Ubuntu with clang
+  build-ubuntu-clang:
+    name: Build (Ubuntu - clang)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set build output dir
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_BUILD_TYPE=Release
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-ubuntu-clang
+          path: ${{ steps.strings.outputs.build-output-dir }}
+
+  # Test job for Ubuntu with clang (depends on build-ubuntu-clang)
+  test-ubuntu-clang:
+    name: Test (Ubuntu - clang)
+    needs: build-ubuntu-clang
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-ubuntu-clang
+          path: build
+
+      - name: Make binary executable (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
+
+      - name: Run Tests
+        working-directory: build
+        run: |
+          ./Release/my_program
+
+  # Build job for macOS
+  build-macos:
+    name: Build (macOS - clang)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set build output dir
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
+
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_BUILD_TYPE=Release
+          -S ${{ github.workspace }}
+
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-clang
+          path: ${{ steps.strings.outputs.build-output-dir }}
+
+  # Test job for macOS (depends on build-macos)
+  test-macos:
+    name: Test (macOS - clang)
+    needs: build-macos
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-macos-clang
+          path: build
+
+      - name: Make binary executable (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
+
+      - name: Run Tests
+        working-directory: build
+        run: |
+          ./Release/my_program
