@@ -100,7 +100,7 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
@@ -152,7 +152,7 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
@@ -204,7 +204,7 @@ jobs:
 
       - name: Make binary executable (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/Release/my_program
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
 
       - name: Run Tests
         working-directory: build
