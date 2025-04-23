@@ -6,7 +6,7 @@ int main() {
     #elif defined(APPLE)
         printf("Hello, apple!\n");
     #else
-        printf("Linux"\n);
+        printf("Linux\n");
     #endif
     return 0;
 }
