@@ -149,6 +149,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set build output dir
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -200,6 +205,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set build output dir
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> $GITHUB_OUTPUT
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
