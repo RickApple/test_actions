@@ -95,6 +95,10 @@ jobs:
           name: build-${{ matrix.os }}-${{ matrix.c_compiler }}
           path: build
 
+      - name: Make binary executable (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: chmod +x ${{ steps.strings.outputs.build-output-dir }}/my_program
+
       - name: Run Tests
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
         run: |
